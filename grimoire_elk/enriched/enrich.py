@@ -389,8 +389,13 @@ class Enrich(ElasticItems):
             if not events:
                 rich_item = self.get_rich_item(item)
                 data_json = json.dumps(rich_item)
-                bulk_json += '{"index" : {"_id" : "%s" } }\n' % \
-                    (item[self.get_field_unique_id()])
+
+                if rich_item.get("is_time_series", False):
+                    bulk_json += '{"create" : { } }\n'
+                else:
+                    bulk_json += '{"index" : {"_id" : "%s" } }\n' % \
+                        (item[self.get_field_unique_id()])
+
                 bulk_json += data_json + "\n"  # Bulk document
                 current += 1
             else:

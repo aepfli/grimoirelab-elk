@@ -227,6 +227,8 @@ class GitHubEnrich(Enrich):
             rich_item = self.__get_rich_pull(item)
         elif item['category'] == 'repository':
             rich_item = self.__get_rich_repo(item)
+        elif item['category'] == 'release':
+            rich_item = self.__get_rich_release(item)
         else:
             logger.error("[github] rich item not defined for GitHub category {}".format(
                          item['category']))
@@ -645,7 +647,6 @@ class GitHubEnrich(Enrich):
         rich_repo['subscribers_count'] = repo['subscribers_count']
         rich_repo['stargazers_count'] = repo['stargazers_count']
         rich_repo['fetched_on'] = repo['fetched_on']
-        rich_repo['url'] = repo['html_url']
 
         if self.prjs_map:
             rich_repo.update(self.get_item_project(rich_repo))
@@ -653,6 +654,34 @@ class GitHubEnrich(Enrich):
         rich_repo.update(self.get_grimoire_fields(item['metadata__updated_on'], "repository"))
 
         return rich_repo
+
+    def __get_rich_release(self, item):
+        rich_release = {}
+
+        self.copy_raw_fields(self.RAW_FIELDS_COPY, item, rich_release)
+
+        release = item['data']
+
+        rich_release['assets'] = release['assets']
+        rich_release['id'] = int(release['id'])
+        rich_release['tag_name'] = release['tag_name']
+        rich_release['latest'] = release['latest']
+        rich_release['name'] = release['name']
+        rich_release['fetched_on'] = release['fetched_on']
+        downloads = 0
+
+        for asset in release['assets']:
+            downloads += asset['download_count']
+
+        rich_release['downloads'] = downloads
+        rich_release['url'] = release['html_url']
+
+        if self.prjs_map:
+            rich_release.update(self.get_item_project(rich_release))
+
+        rich_release.update(self.get_grimoire_fields(item['metadata__updated_on'], "release"))
+        rich_release["is_time_series"] = True
+        return rich_release
 
     def __create_backlog_item(self, repository_url, repository_name, project, date, org_name, interval, label, map_label, issues):
 

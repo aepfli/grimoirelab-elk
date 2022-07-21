@@ -347,7 +347,12 @@ class ElasticSearch(object):
                              time() - task_init, new_items, json_size))
                 bulk_json = ""
             data_json = json.dumps(item)
-            bulk_json += '{{"index" : {{"_id" : "{}" }} }}\n'.format(item[field_id])
+
+            if getattr(item, "is_time_series", False):
+                bulk_json += '{"create" : { } }\n'
+            else:
+                bulk_json += '{{"index" : {{"_id" : "{}" }} }}\n'.format(item[field_id])
+
             bulk_json += data_json + "\n"  # Bulk document
             current += 1
 
